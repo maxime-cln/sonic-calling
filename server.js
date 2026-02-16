@@ -19,7 +19,15 @@ const N8N_WEBHOOK_ACCEPT_URL = process.env.N8N_WEBHOOK_ACCEPT_URL || '';
 // --- Middleware ---
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Sert les fichiers statiques depuis 'public/' OU depuis la racine (compatibilité GitHub upload)
+const publicPath = path.join(__dirname, 'public');
+const fs = require('fs');
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+} else {
+  app.use(express.static(__dirname));
+}
 
 // --- Stockage en mémoire (MVP, pas de base de données) ---
 const deals = new Map();
@@ -234,3 +242,4 @@ server.listen(PORT, () => {
     console.log('⚠️  N8N_WEBHOOK_ACCEPT_URL non configuré — les acceptations ne seront pas envoyées à n8n');
   }
 });
+
