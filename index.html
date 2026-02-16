@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sonic Calling - LiveMentor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    min-height: 100vh;
+  }
+
+  /* ========== STATUS BAR ========== */
+  .status-bar {
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .status-bar h1 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+  }
+  .status-bar h1 span { color: #ff6b35; }
+  .connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #999;
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+  }
+  .status-dot.connected { background: #00c853; }
+  .status-dot.disconnected { background: #ff3d00; }
+
+  /* ========== MAIN CONTENT ========== */
+  .main-content {
+    max-width: 600px;
+    margin: 80px auto;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .waiting-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+  .main-content h2 {
+    font-size: 22px;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  .main-content p {
+    font-size: 15px;
+    color: #888;
+    line-height: 1.6;
+  }
+  .test-btn {
+    margin-top: 32px;
+    padding: 12px 28px;
+    background: #f0f0f0;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .test-btn:hover {
+    background: #e8e8e8;
+    border-color: #aaa;
+    color: #666;
+  }
+
+  /* ========== STATS BAR ========== */
+  .stats-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 12px 24px;
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    font-size: 13px;
+    color: #999;
+  }
+  .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-number { font-weight: 700; color: #333; font-size: 16px; }
+
+  /* ========== ALERT POPUP ========== */
+  .alert-popup {
+    position: fixed;
+    top: -450px;
+    right: 24px;
+    width: 400px;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,107,53,0.3);
+    z-index: 10000;
+    transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .alert-popup.visible {
+    top: 24px;
+    animation: pulse-border 1.5s ease 0.5s 2;
+  }
+  @keyframes pulse-border {
+    0% { box-shadow: 0 12px 48px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,107,53,0.3); }
+    50% { box-shadow: 0 12px 48px rgba(0,0,0,0.35), 0 0 0 5px rgba(255,107,53,0.6); }
+    100% { box-shadow: 0 12px 48px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,107,53,0.3); }
+  }
+
+  .alert-popup-header {
+    background: linear-gradient(135deg, #ff6b35, #ff3366);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .alert-popup-header-text h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .alert-popup-header-text p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 1px;
+  }
+
+  /* Countdown */
+  .countdown-mini {
+    width: 48px;
+    height: 48px;
+    position: relative;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .countdown-mini svg {
+    width: 48px;
+    height: 48px;
+    transform: rotate(-90deg);
+  }
+  .countdown-mini circle { fill: none; stroke-width: 3.5; }
+  .countdown-mini .bg { stroke: rgba(255,255,255,0.25); }
+  .countdown-mini .progress {
+    stroke: #fff;
+    stroke-linecap: round;
+    stroke-dasharray: 138;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .countdown-mini .number {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .alert-popup-body { padding: 16px 20px; }
+  .alert-popup-info { display: flex; flex-direction: column; gap: 10px; }
+  .popup-info-row { display: flex; align-items: center; gap: 10px; }
+  .popup-info-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .popup-info-icon.canal { background: #fef3e2; }
+  .popup-info-icon.source { background: #f0e8fd; }
+  .popup-info-icon.formation { background: #e8f4fd; }
+  .popup-info-label {
+    font-size: 10px;
+    color: #999;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .popup-info-value { font-size: 14px; color: #333; font-weight: 600; }
+
+  .alert-popup-actions {
+    display: flex;
+    gap: 10px;
+    padding: 4px 20px 18px;
+  }
+  .btn {
+    flex: 1;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-accept {
+    background: linear-gradient(135deg, #00c853, #00a843);
+    color: #fff;
+  }
+  .btn-accept:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,200,83,0.4); }
+  .btn-skip { background: #f0f0f0; color: #666; }
+  .btn-skip:hover { background: #e4e4e4; }
+
+  .alert-progress-bar { height: 4px; background: #f0f0f0; }
+  .alert-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00c853, #ffab00, #ff3d00);
+    width: 100%;
+    transition: width 1s linear;
+  }
+
+  /* ========== ACCEPTED POPUP ========== */
+  .accepted-popup {
+    position: fixed;
+    top: -350px;
+    right: 24px;
+    width: 400px;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0,200,83,0.3), 0 0 0 2px rgba(0,200,83,0.3);
+    z-index: 10000;
+    transition: top 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    padding: 24px;
+  }
+  .accepted-popup.visible { top: 24px; }
+  .accepted-icon {
+    width: 52px;
+    height: 52px;
+    background: #e8f7ed;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+  }
+  .accepted-popup h3 { color: #00a843; font-size: 18px; margin-bottom: 6px; }
+  .accepted-popup .phone {
+    font-size: 28px;
+    font-weight: 800;
+    color: #333;
+    margin: 12px 0;
+    letter-spacing: 1px;
+  }
+  .accepted-popup .phone a {
+    color: #333;
+    text-decoration: none;
+  }
+  .accepted-popup .phone a:hover { color: #00a843; }
+  .accepted-popup .sub { color: #999; font-size: 12px; }
+  .accepted-popup .hs-link {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: #ff7a59;
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .accepted-popup .hs-link:hover { background: #e8684a; }
+  .accepted-popup .btn-close {
+    margin-top: 16px;
+    padding: 10px 24px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+  }
+  .accepted-popup .btn-close:hover { background: #e4e4e4; }
+
+  /* ========== NOTIFICATION SOUND INDICATOR ========== */
+  .sound-notice {
+    background: #fff3e0;
+    border: 1px solid #ffe0b2;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #e65100;
+    display: none;
+  }
+  .sound-notice.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <h1>🔥 <span>Sonic Calling</span></h1>
+  <div class="connection-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connexion...</span>
+  </div>
+</div>
+
+<!-- Main content (visible quand pas d'alerte) -->
+<div class="main-content">
+  <div class="waiting-icon">📡</div>
+  <h2>En attente de deals...</h2>
+  <p>
+    Garde cet onglet ouvert. Quand un nouveau deal arrive,<br>
+    une alerte apparaîtra automatiquement ici.
+  </p>
+  <div class="sound-notice" id="soundNotice">
+    🔊 Clique n'importe où sur cette page pour activer les sons de notification.
+  </div>
+  <button class="test-btn" onclick="sendTestDeal()">
+    🧪 Envoyer un deal test
+  </button>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-bar">
+  <div class="stat">
+    <span>Reçus aujourd'hui :</span>
+    <span class="stat-number" id="statReceived">0</span>
+  </div>
+  <div class="stat">
+    <span>Acceptés :</span>
+    <span class="stat-number" id="statAccepted" style="color:#00a843;">0</span>
+  </div>
+  <div class="stat">
+    <span>Passés :</span>
+    <span class="stat-number" id="statSkipped" style="color:#999;">0</span>
+  </div>
+</div>
+
+<!-- Alert popup -->
+<div class="alert-popup" id="alertPopup">
+  <div class="alert-popup-header">
+    <div style="font-size:24px;">🔥</div>
+    <div class="alert-popup-header-text">
+      <h2>Nouveau deal à appeler !</h2>
+      <p>Un lead vient de remplir le formulaire</p>
+    </div>
+    <div class="countdown-mini">
+      <svg viewBox="0 0 48 48">
+        <circle class="bg" cx="24" cy="24" r="22"/>
+        <circle class="progress" id="countdownProgress" cx="24" cy="24" r="22"/>
+      </svg>
+      <div class="number" id="countdownNumber">10</div>
+    </div>
+  </div>
+  <div class="alert-popup-body">
+    <div class="alert-popup-info">
+      <div class="popup-info-row">
+        <div class="popup-info-icon canal">📣</div>
+        <div>
+          <div class="popup-info-label">Canal</div>
+          <div class="popup-info-value" id="dealCanal">—</div>
+        </div>
+      </div>
+      <div class="popup-info-row">
+        <div class="popup-info-icon source">🎯</div>
+        <div>
+          <div class="popup-info-label">Source</div>
+          <div class="popup-info-value" id="dealSource">—</div>
+        </div>
+      </div>
+      <div class="popup-info-row">
+        <div class="popup-info-icon formation">🎓</div>
+        <div>
+          <div class="popup-info-label">Formation envisagée</div>
+          <div class="popup-info-value" id="dealFormation">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="alert-popup-actions">
+    <button class="btn btn-skip" id="btnSkip" onclick="skipDeal()">Passer ⏭️</button>
+    <button class="btn btn-accept" id="btnAccept" onclick="acceptDeal()">📞 J'appelle</button>
+  </div>
+  <div class="alert-progress-bar">
+    <div class="alert-progress-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<!-- Accepted popup -->
+<div class="accepted-popup" id="acceptedPopup">
+  <div class="accepted-icon">✅</div>
+  <h3>Deal accepté !</h3>
+  <p style="color:#666; font-size:13px;">Appelle ce lead maintenant :</p>
+  <div class="phone"><a id="phoneLink" href="tel:">—</a></div>
+  <p class="sub">Le deal a été mis à jour dans HubSpot</p>
+  <a class="hs-link" id="hubspotLink" href="#" target="_blank">Ouvrir dans HubSpot ↗</a>
+  <br>
+  <button class="btn-close" onclick="closeAccepted()">Fermer</button>
+</div>
+
+<!-- Socket.io client (servi automatiquement par le serveur) -->
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+// --- State ---
+let currentDeal = null;
+let countdownInterval = null;
+let countdownValue = 10;
+let stats = { received: 0, accepted: 0, skipped: 0 };
+let soundEnabled = false;
+const COUNTDOWN_SECONDS = 10;
+const circumference = 2 * Math.PI * 22;
+
+// --- Audio ---
+// On crée le contexte audio au premier clic (restriction navigateur)
+let audioCtx = null;
+document.addEventListener('click', () => {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    soundEnabled = true;
+    document.getElementById('soundNotice').classList.remove('visible');
+  }
+}, { once: false });
+
+function playAlertSound() {
+  if (!audioCtx || !soundEnabled) return;
+  try {
+    // Son d'alerte : deux bips montants
+    const now = audioCtx.currentTime;
+    [0, 0.15].forEach((delay, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 800 + (i * 200);
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.12);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.12);
+    });
+  } catch (e) { /* ignore audio errors */ }
+}
+
+function playAcceptSound() {
+  if (!audioCtx || !soundEnabled) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 1200;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  } catch (e) { /* ignore */ }
+}
+
+// --- Socket.io connection ---
+const socket = io();
+
+socket.on('connect', () => {
+  document.getElementById('statusDot').className = 'status-dot connected';
+  document.getElementById('statusText').textContent = 'Connecté — en attente de deals';
+  console.log('[SOCKET] Connecté au serveur');
+});
+
+socket.on('disconnect', () => {
+  document.getElementById('statusDot').className = 'status-dot disconnected';
+  document.getElementById('statusText').textContent = 'Déconnecté — tentative de reconnexion...';
+  console.log('[SOCKET] Déconnecté');
+});
+
+// --- Quand un nouveau deal arrive ---
+socket.on('new-deal', (deal) => {
+  console.log('[DEAL] Nouveau deal reçu:', deal);
+
+  // Si une alerte est déjà en cours, ignorer (MVP simple)
+  if (currentDeal) {
+    console.log('[DEAL] Alerte déjà en cours, deal ignoré');
+    return;
+  }
+
+  currentDeal = deal;
+  stats.received++;
+  updateStats();
+
+  // Remplir les infos
+  document.getElementById('dealCanal').textContent = deal.canal;
+  document.getElementById('dealSource').textContent = deal.source;
+  document.getElementById('dealFormation').textContent = deal.formation;
+
+  // Afficher l'alerte
+  document.getElementById('alertPopup').classList.add('visible');
+
+  // Son
+  playAlertSound();
+
+  // Notification navigateur (si autorisée)
+  if (Notification.permission === 'granted') {
+    new Notification('🔥 Nouveau deal à appeler !', {
+      body: `${deal.formation} · ${deal.canal}`,
+      icon: '🔥',
+      requireInteraction: true
+    });
+  }
+
+  // Démarrer le countdown
+  startCountdown();
+});
+
+// --- Countdown ---
+function startCountdown() {
+  countdownValue = COUNTDOWN_SECONDS;
+  const circle = document.getElementById('countdownProgress');
+  const number = document.getElementById('countdownNumber');
+  const fill = document.getElementById('progressFill');
+
+  circle.style.strokeDasharray = circumference;
+  circle.style.strokeDashoffset = 0;
+  number.textContent = countdownValue;
+  number.style.color = '#fff';
+  fill.style.width = '100%';
+  fill.style.background = 'linear-gradient(90deg, #00c853, #ffab00, #ff3d00)';
+
+  countdownInterval = setInterval(() => {
+    countdownValue--;
+    number.textContent = countdownValue;
+
+    const offset = circumference * (1 - countdownValue / COUNTDOWN_SECONDS);
+    circle.style.strokeDashoffset = offset;
+    fill.style.width = (countdownValue / COUNTDOWN_SECONDS * 100) + '%';
+
+    if (countdownValue <= 3) {
+      number.style.color = '#ffcc00';
+      fill.style.background = 'linear-gradient(90deg, #ff3d00, #ff6d00)';
+    }
+
+    if (countdownValue <= 0) {
+      clearInterval(countdownInterval);
+      timeoutDeal();
+    }
+  }, 1000);
+}
+
+// --- Actions ---
+async function acceptDeal() {
+  if (!currentDeal) return;
+  clearInterval(countdownInterval);
+
+  const dealId = currentDeal.dealId;
+
+  // Désactiver les boutons pendant la requête
+  document.getElementById('btnAccept').disabled = true;
+  document.getElementById('btnSkip').disabled = true;
+
+  try {
+    const res = await fetch(`/api/deal/${dealId}/accept`, { method: 'POST' });
+    const data = await res.json();
+
+    if (data.success) {
+      // Masquer l'alerte
+      document.getElementById('alertPopup').classList.remove('visible');
+
+      // Afficher la confirmation avec le téléphone
+      document.getElementById('phoneLink').textContent = data.telephone;
+      document.getElementById('phoneLink').href = `tel:${data.telephone.replace(/\s/g, '')}`;
+
+      if (data.hubspotUrl) {
+        document.getElementById('hubspotLink').href = data.hubspotUrl;
+        document.getElementById('hubspotLink').style.display = 'inline-block';
+      } else {
+        document.getElementById('hubspotLink').style.display = 'none';
+      }
+
+      document.getElementById('acceptedPopup').classList.add('visible');
+      playAcceptSound();
+
+      stats.accepted++;
+      updateStats();
+    }
+  } catch (err) {
+    console.error('[ERROR] Erreur lors de l\'acceptation:', err);
+    alert('Erreur de connexion. Réessaye.');
+  }
+
+  document.getElementById('btnAccept').disabled = false;
+  document.getElementById('btnSkip').disabled = false;
+  currentDeal = null;
+}
+
+async function skipDeal() {
+  if (!currentDeal) return;
+  clearInterval(countdownInterval);
+
+  const dealId = currentDeal.dealId;
+
+  fetch(`/api/deal/${dealId}/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: 'skip' })
+  }).catch(() => {});
+
+  document.getElementById('alertPopup').classList.remove('visible');
+  currentDeal = null;
+  stats.skipped++;
+  updateStats();
+}
+
+function timeoutDeal() {
+  if (!currentDeal) return;
+
+  const dealId = currentDeal.dealId;
+
+  fetch(`/api/deal/${dealId}/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: 'timeout' })
+  }).catch(() => {});
+
+  document.getElementById('alertPopup').classList.remove('visible');
+  currentDeal = null;
+  stats.skipped++;
+  updateStats();
+}
+
+function closeAccepted() {
+  document.getElementById('acceptedPopup').classList.remove('visible');
+}
+
+function updateStats() {
+  document.getElementById('statReceived').textContent = stats.received;
+  document.getElementById('statAccepted').textContent = stats.accepted;
+  document.getElementById('statSkipped').textContent = stats.skipped;
+}
+
+// --- Test deal ---
+async function sendTestDeal() {
+  try {
+    const res = await fetch('/api/test-deal');
+    const data = await res.json();
+    console.log('[TEST] Deal test envoyé:', data);
+  } catch (err) {
+    alert('Erreur : le serveur ne répond pas');
+  }
+}
+
+// --- Demander la permission pour les notifications navigateur ---
+if ('Notification' in window && Notification.permission === 'default') {
+  // On affiche l'avis pour le son
+  document.getElementById('soundNotice').classList.add('visible');
+
+  // Demander la permission notifications au prochain clic
+  document.addEventListener('click', () => {
+    if (Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, { once: true });
+}
+
+// --- Keep-alive ping (empêche Render de mettre l'app en veille) ---
+setInterval(() => {
+  fetch('/api/health').catch(() => {});
+}, 5 * 60 * 1000); // Toutes les 5 minutes
+</script>
+
+</body>
+</html>
