@@ -172,11 +172,11 @@ app.get('/api/health', (req, res) => {
 app.get('/api/test-deal', (req, res) => {
   const testDeal = {
     dealId: 'test-' + Date.now(),
-    canal: 'Facebook Ads',
-    source: 'Créer son entreprise - Février 2026',
-    formation: 'Création d\'entreprise',
+    canal: 'Lead generation ad',
+    source: '[leadgen] Formation Coach-Sportif',
+    formation: 'Coach-Sportif',
     telephone: '06 12 34 56 78',
-    hubspotUrl: 'https://app.hubspot.com/contacts/4075335/record/0-3/test',
+    hubspotUrl: 'https://app.hubspot.com/contacts/4075335/record/0-3/30813062029',
     receivedAt: new Date().toISOString(),
     status: 'pending'
   };
