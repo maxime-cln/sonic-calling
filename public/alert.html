@@ -249,19 +249,16 @@ const countdownInterval = setInterval(() => {
 const baseUrl = window.location.origin;
 
 // --- Actions ---
-async function acceptDeal() {
+function acceptDeal() {
   clearInterval(countdownInterval);
 
-  try {
-    const res = await fetch(`${baseUrl}/api/deal/${dealId}/accept`, { method: 'POST' });
-    const data = await res.json();
-
-    if (data.success && data.hubspotUrl) {
-      window.opener ? window.opener.open(data.hubspotUrl, '_blank') : window.open(data.hubspotUrl, '_blank');
-    }
-  } catch (err) {
-    console.error('Erreur:', err);
+  // Ouvrir HubSpot IMMÉDIATEMENT au clic (sinon le navigateur bloque le popup)
+  if (hubspotUrl) {
+    window.open(hubspotUrl, '_blank');
   }
+
+  // Notifier le serveur en arrière-plan (pas besoin d'attendre)
+  fetch(`${baseUrl}/api/deal/${dealId}/accept`, { method: 'POST' }).catch(() => {});
 
   if (window.opener) {
     window.opener.postMessage({ type: 'deal-accepted', dealId: dealId }, '*');
