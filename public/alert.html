@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔥 Nouveau deal !</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Lexend Deca', sans-serif;
+    background: #fff;
+    color: #33475b;
+    overflow: hidden;
+  }
+
+  /* --- Header --- */
+  .header {
+    background: #ff7a59;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header-badge {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .header-text { flex: 1; }
+  .header-text h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.2px;
+  }
+  .header-text p {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 1px;
+    font-weight: 400;
+  }
+
+  /* Countdown */
+  .countdown {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2.5px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .countdown.urgent {
+    border-color: #ffcc00;
+    color: #ffcc00;
+  }
+
+  /* --- Body --- */
+  .body { padding: 16px 18px 12px; }
+
+  .field {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eaf0f6;
+  }
+  .field:last-child { border-bottom: none; }
+  .field-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: #eaf0f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .field-label {
+    font-size: 10px;
+    color: #7c98b6;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+  .field-value {
+    font-size: 13px;
+    color: #33475b;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  /* --- Progress bar --- */
+  .progress-track {
+    height: 3px;
+    background: #eaf0f6;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 100%;
+    background: #ff7a59;
+    border-radius: 0 3px 3px 0;
+    transition: width 1s linear;
+  }
+
+  /* --- Actions --- */
+  .actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 18px 16px;
+  }
+  .btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Lexend Deca', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .btn-skip {
+    background: #eaf0f6;
+    color: #516f90;
+  }
+  .btn-skip:hover { background: #dbe4ed; }
+  .btn-accept {
+    background: #00a4bd;
+    color: #fff;
+  }
+  .btn-accept:hover { background: #0091a7; box-shadow: 0 2px 8px rgba(0,164,189,0.3); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">📞</div>
+  <div class="header-text">
+    <h2>Nouveau lead à rappeler</h2>
+    <p>Formulaire soumis il y a 5 min</p>
+  </div>
+  <div class="countdown" id="countdown">10</div>
+</div>
+
+<div class="body">
+  <div class="field">
+    <div class="field-icon">📣</div>
+    <div>
+      <div class="field-label">Canal</div>
+      <div class="field-value" id="dealCanal">—</div>
+    </div>
+  </div>
+  <div class="field">
+    <div class="field-icon">🎯</div>
+    <div>
+      <div class="field-label">Source</div>
+      <div class="field-value" id="dealSource">—</div>
+    </div>
+  </div>
+  <div class="field">
+    <div class="field-icon">🎓</div>
+    <div>
+      <div class="field-label">Formation</div>
+      <div class="field-value" id="dealFormation">—</div>
+    </div>
+  </div>
+</div>
+
+<div class="progress-track">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="actions">
+  <button class="btn btn-skip" onclick="skipDeal()">Passer</button>
+  <button class="btn btn-accept" onclick="acceptDeal()">J'appelle →</button>
+</div>
+
+<script>
+// --- Récupérer les données du deal depuis l'URL ---
+const params = new URLSearchParams(window.location.search);
+const dealId = params.get('dealId') || '';
+const canal = params.get('canal') || '—';
+const source = params.get('source') || '—';
+const formation = params.get('formation') || '—';
+const hubspotUrl = params.get('hubspotUrl') || '';
+
+// --- Remplir les infos ---
+document.getElementById('dealCanal').textContent = canal;
+document.getElementById('dealSource').textContent = source;
+document.getElementById('dealFormation').textContent = formation;
+
+// --- Audio ---
+let audioCtx = null;
+try {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const now = audioCtx.currentTime;
+  [0, 0.15].forEach((delay, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 800 + (i * 200);
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, now + delay);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.12);
+    osc.start(now + delay);
+    osc.stop(now + delay + 0.12);
+  });
+} catch (e) { /* ignore */ }
+
+// --- Countdown ---
+const COUNTDOWN_SECONDS = 10;
+let countdownValue = COUNTDOWN_SECONDS;
+const countdownEl = document.getElementById('countdown');
+const progressBar = document.getElementById('progressBar');
+
+const countdownInterval = setInterval(() => {
+  countdownValue--;
+  countdownEl.textContent = countdownValue;
+  progressBar.style.width = (countdownValue / COUNTDOWN_SECONDS * 100) + '%';
+
+  if (countdownValue <= 3) {
+    countdownEl.classList.add('urgent');
+  }
+
+  if (countdownValue <= 0) {
+    clearInterval(countdownInterval);
+    timeoutDeal();
+  }
+}, 1000);
+
+// --- URL de base ---
+const baseUrl = window.location.origin;
+
+// --- Actions ---
+async function acceptDeal() {
+  clearInterval(countdownInterval);
+
+  try {
+    const res = await fetch(`${baseUrl}/api/deal/${dealId}/accept`, { method: 'POST' });
+    const data = await res.json();
+
+    if (data.success && data.hubspotUrl) {
+      window.opener ? window.opener.open(data.hubspotUrl, '_blank') : window.open(data.hubspotUrl, '_blank');
+    }
+  } catch (err) {
+    console.error('Erreur:', err);
+  }
+
+  if (window.opener) {
+    window.opener.postMessage({ type: 'deal-accepted', dealId: dealId }, '*');
+  }
+  window.close();
+}
+
+function skipDeal() {
+  clearInterval(countdownInterval);
+
+  fetch(`${baseUrl}/api/deal/${dealId}/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: 'skip' })
+  }).catch(() => {});
+
+  if (window.opener) {
+    window.opener.postMessage({ type: 'deal-skipped', dealId: dealId }, '*');
+  }
+  window.close();
+}
+
+function timeoutDeal() {
+  fetch(`${baseUrl}/api/deal/${dealId}/skip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: 'timeout' })
+  }).catch(() => {});
+
+  if (window.opener) {
+    window.opener.postMessage({ type: 'deal-timeout', dealId: dealId }, '*');
+  }
+  setTimeout(() => window.close(), 1000);
+}
+
+window.focus();
+</script>
+
+</body>
+</html>
