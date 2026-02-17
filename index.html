@@ -505,28 +505,51 @@ socket.on('new-deal', (deal) => {
   stats.received++;
   updateStats();
 
-  // Remplir les infos
-  document.getElementById('dealCanal').textContent = deal.canal;
-  document.getElementById('dealSource').textContent = deal.source;
-  document.getElementById('dealFormation').textContent = deal.formation;
+  // Ouvrir le popup d'alerte dans une fenêtre séparée
+  const alertParams = new URLSearchParams({
+    dealId: deal.dealId,
+    canal: deal.canal || '',
+    source: deal.source || '',
+    formation: deal.formation || '',
+    hubspotUrl: deal.hubspotUrl || ''
+  });
+  const popupUrl = `/alert.html?${alertParams.toString()}`;
+  const popup = window.open(popupUrl, 'sonic-alert', 'width=420,height=400,top=80,left=' + (screen.width - 460));
 
-  // Afficher l'alerte
-  document.getElementById('alertPopup').classList.add('visible');
-
-  // Son
-  playAlertSound();
-
-  // Notification navigateur (si autorisée)
-  if (Notification.permission === 'granted') {
-    new Notification('🔥 Nouveau deal à appeler !', {
-      body: `${deal.formation} · ${deal.canal}`,
-      icon: '🔥',
-      requireInteraction: true
-    });
+  if (!popup || popup.closed) {
+    // Popup bloqué — fallback sur l'alerte dans la page
+    console.log('[DEAL] Popup bloqué, fallback sur alerte in-page');
+    document.getElementById('dealCanal').textContent = deal.canal;
+    document.getElementById('dealSource').textContent = deal.source;
+    document.getElementById('dealFormation').textContent = deal.formation;
+    document.getElementById('alertPopup').classList.add('visible');
+    playAlertSound();
+    startCountdown();
+  } else {
+    // Surveiller la fermeture du popup pour reset currentDeal
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopup);
+        currentDeal = null;
+        console.log('[DEAL] Popup fermé, prêt pour le prochain deal');
+      }
+    }, 500);
   }
+});
 
-  // Démarrer le countdown
-  startCountdown();
+// --- Écouter les messages du popup ---
+window.addEventListener('message', (event) => {
+  if (!event.data || !event.data.type) return;
+
+  if (event.data.type === 'deal-accepted') {
+    stats.accepted++;
+    updateStats();
+    currentDeal = null;
+  } else if (event.data.type === 'deal-skipped' || event.data.type === 'deal-timeout') {
+    stats.skipped++;
+    updateStats();
+    currentDeal = null;
+  }
 });
 
 // --- Countdown ---
