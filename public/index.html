@@ -525,6 +525,15 @@ socket.on('new-deal', (deal) => {
     document.getElementById('alertPopup').classList.add('visible');
     playAlertSound();
     startCountdown();
+  } else {
+    // Surveiller la fermeture du popup pour reset currentDeal
+    const checkPopup = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(checkPopup);
+        currentDeal = null;
+        console.log('[DEAL] Popup fermé, prêt pour le prochain deal');
+      }
+    }, 500);
   }
 });
 
