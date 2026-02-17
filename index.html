@@ -582,22 +582,14 @@ async function acceptDeal() {
       // Masquer l'alerte
       document.getElementById('alertPopup').classList.remove('visible');
 
-      // Afficher la confirmation avec le téléphone
-      document.getElementById('phoneLink').textContent = data.telephone;
-      document.getElementById('phoneLink').href = `tel:${data.telephone.replace(/\s/g, '')}`;
-
-      if (data.hubspotUrl) {
-        document.getElementById('hubspotLink').href = data.hubspotUrl;
-        document.getElementById('hubspotLink').style.display = 'inline-block';
-      } else {
-        document.getElementById('hubspotLink').style.display = 'none';
-      }
-
-      document.getElementById('acceptedPopup').classList.add('visible');
       playAcceptSound();
-
       stats.accepted++;
       updateStats();
+
+      // Rediriger directement vers la page du deal dans HubSpot
+      if (data.hubspotUrl) {
+        window.open(data.hubspotUrl, '_blank');
+      }
     }
   } catch (err) {
     console.error('[ERROR] Erreur lors de l\'acceptation:', err);
