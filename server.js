@@ -19,15 +19,7 @@ const N8N_WEBHOOK_ACCEPT_URL = process.env.N8N_WEBHOOK_ACCEPT_URL || '';
 // --- Middleware ---
 app.use(cors());
 app.use(express.json());
-
-// Sert les fichiers statiques depuis 'public/' OU depuis la racine (compatibilité GitHub upload)
-const publicPath = path.join(__dirname, 'public');
-const fs = require('fs');
-if (fs.existsSync(publicPath)) {
-  app.use(express.static(publicPath));
-} else {
-  app.use(express.static(__dirname));
-}
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Stockage en mémoire (MVP, pas de base de données) ---
 const deals = new Map();
@@ -184,7 +176,7 @@ app.get('/api/test-deal', (req, res) => {
     source: 'Créer son entreprise - Février 2026',
     formation: 'Création d\'entreprise',
     telephone: '06 12 34 56 78',
-    hubspotUrl: 'https://app.hubspot.com/contacts/xxx/deal/test',
+    hubspotUrl: 'https://app.hubspot.com/contacts/4075335/record/0-3/test',
     receivedAt: new Date().toISOString(),
     status: 'pending'
   };
@@ -242,4 +234,3 @@ server.listen(PORT, () => {
     console.log('⚠️  N8N_WEBHOOK_ACCEPT_URL non configuré — les acceptations ne seront pas envoyées à n8n');
   }
 });
-
